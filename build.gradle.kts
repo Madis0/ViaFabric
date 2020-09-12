@@ -20,7 +20,7 @@ val branch = if (!travisBranch.isNullOrBlank()) travisBranch else try {
     "unknown"
 }
 
-version = "0.2.10-SNAPSHOT+" + try {
+version = "0.2.11-SNAPSHOT+" + try {
     gitVersion() + "-" + branch
 } catch (e: Exception) {
     "unknown"
@@ -45,6 +45,7 @@ repositories {
     maven(url = "https://server.bbkr.space/artifactory/libs-snapshot")
     maven(url = "https://server.bbkr.space/artifactory/libs-release")
     maven(url = "https://dl.bintray.com/legacy-fabric/Legacy-Fabric-Maven")
+    maven(url = "https://jitpack.io")
 }
 
 
@@ -59,8 +60,8 @@ tasks.named<ProcessResources>("processResources") {
 
 dependencies {
     // transitive = false because Guava is conflicting on runClient
-    implementation("us.myles:viaversion:3.1.0") { isTransitive = false }
-    include("us.myles:viaversion:3.1.0")
+    implementation("us.myles:viaversion:3.1.1") { isTransitive = false }
+    include("us.myles:viaversion:3.1.1")
     include("org.yaml:snakeyaml:1.26")
 
     // Use 1.8.9 Legacy Fabric https://github.com/Legacy-Fabric/fabric-example-mod/blob/master/gradle.properties
@@ -72,6 +73,7 @@ dependencies {
     }
 
     modImplementation("net.fabricmc.fabric-api:fabric-api:0.2.7-1.8.9")
+    modImplementation("com.github.shedaniel:modmenu-1.8.9:1.8.9-SNAPSHOT")
 
     //modImplementation("io.github.cottonmc:cotton-client-commands:1.0.1+1.16-rc1")
     //include("io.github.cottonmc:cotton-client-commands:1.0.1+1.16-rc1")
@@ -113,6 +115,7 @@ curseforge {
                 addGameVersion("1.16")
                 addGameVersion("1.16.1")
                 addGameVersion("1.16.2")
+                addGameVersion("1.16.3")
             }
         }
         addGameVersion("Fabric")
