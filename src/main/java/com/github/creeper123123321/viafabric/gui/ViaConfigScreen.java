@@ -27,9 +27,11 @@ package com.github.creeper123123321.viafabric.gui;
 
 
 import com.github.creeper123123321.viafabric.ViaFabric;
+import com.github.creeper123123321.viafabric.mixin.client.MixinButtonWidgetAccessor;
 import com.github.creeper123123321.viafabric.util.ProtocolUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.class_703;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -45,14 +47,14 @@ public class ViaConfigScreen extends Screen {
     private static CompletableFuture<Void> latestProtocolSave;
     private final Screen parent;
     private TextFieldWidget protocolVersion;
+    private TranslatableText title = new TranslatableText("gui.viafabric_config.title");
 
     public ViaConfigScreen(Screen parent) {
-        super(new TranslatableText("gui.viafabric_config.title"));
+        super();
         this.parent = parent;
     }
 
     private static int getProtocolTextColor(boolean valid, boolean supported) {
-
         if (!valid) {
             return 0xff0000; // Red
         } else if (!supported) {
@@ -61,45 +63,75 @@ public class ViaConfigScreen extends Screen {
         return 0xE0E0E0; // Default
     }
 
-    protected void init() {
+    @Override
+    public void init() {
         int entries = 0;
 
-        this.addButton(new ButtonWidget(this.width / 2 - 155 + entries % 2 * 160,
+        this.buttons.add(new ButtonWidget(0, this.width / 2 - 155 + entries % 2 * 160,
                 this.height / 6 + 24 * (entries >> 1),
                 150,
-                20, getClientSideText().asString(), this::onClickClientSide));
+                20, getClientSideText().asString()));
         entries++;
 
-        this.addButton(new ButtonWidget(this.width / 2 - 155 + entries % 2 * 160,
+        this.buttons.add(new ButtonWidget(1, this.width / 2 - 155 + entries % 2 * 160,
                 this.height / 6 + 24 * (entries >> 1),
                 150,
-                20, getHideViaButtonText().asString(), this::onHideViaButton));
+                20, getHideViaButtonText().asString()));
         entries++;
 
-        protocolVersion = new TextFieldWidget(this.font,
+        protocolVersion = new TextFieldWidget(2, this.textRenderer,
                 this.width / 2 - 155 + entries % 2 * 160,
                 this.height / 6 + 24 * (entries >> 1),
                 150,
-                20, new TranslatableText("gui.protocol_version_field.name").asString());
+                20);
+        protocolVersion.setText(new TranslatableText("gui.protocol_version_field.name").asString());
         entries++;
 
         protocolVersion.setTextPredicate(ProtocolUtils::isStartOfProtocolText);
-        protocolVersion.setChangedListener(this::onChangeVersionField);
+        protocolVersion.setListener(new class_703.WidgetListener() {
+            @Override
+            public void method_2596(int i, boolean bl) {
+            }
+
+            @Override
+            public void method_2594(int i, float f) {
+            }
+
+            @Override
+            public void textModified(int id, String text) {
+                onChangeVersionField(text);
+            }
+        });
         int clientSideVersion = ViaFabric.config.getClientSideVersion();
         protocolVersion.setText(ProtocolUtils.getProtocolName(clientSideVersion));
 
-        this.children.add(protocolVersion);
+        //this.children.add(protocolVersion);
 
         //noinspection ConstantConditions
         if (entries % 2 == 1) {
             entries++;
         }
 
-        this.addButton(new ButtonWidget(this.width / 2 - 100, this.height / 6 + 24 * (entries >> 1), 200, 20, new TranslatableText("gui.done").asString(), (buttonWidget) -> MinecraftClient.getInstance().openScreen(this.parent)));
+        this.buttons.add(new ButtonWidget(999, this.width / 2 - 100, this.height / 6 + 24 * (entries >> 1), 200, 20, new TranslatableText("gui.done").asString()));
+    }
+
+    @Override
+    protected void buttonPressed(ButtonWidget button) {
+        switch (button.id) {
+            case 0:
+                onClickClientSide(button);
+                break;
+            case 1:
+                onHideViaButton(button);
+                break;
+            case 999:
+                MinecraftClient.getInstance().openScreen(this.parent);
+                break;
+        }
     }
 
     private void onChangeVersionField(String text) {
-        protocolVersion.setSuggestion(null);
+        //protocolVersion.setSuggestion(null);
         int newVersion = ViaFabric.config.getClientSideVersion();
 
         Integer parsed = ProtocolUtils.parseProtocolId(text);
@@ -112,7 +144,7 @@ public class ViaConfigScreen extends Screen {
             validProtocol = false;
             String[] suggestions = ProtocolUtils.getProtocolSuggestions(text);
             if (suggestions.length == 1) {
-                protocolVersion.setSuggestion(suggestions[0].substring(text.length()));
+                //protocolVersion.setSuggestion(suggestions[0].substring(text.length()));
             }
         }
 
@@ -129,24 +161,25 @@ public class ViaConfigScreen extends Screen {
     private void onClickClientSide(ButtonWidget widget) {
         if (!ViaFabric.config.isClientSideEnabled()) {
             MinecraftClient.getInstance().openScreen(new ConfirmScreen(
-                    answer -> {
+                    (answer, id) -> {
                         MinecraftClient.getInstance().openScreen(this);
                         if (answer) {
                             ViaFabric.config.setClientSideEnabled(true);
                             ViaFabric.config.saveConfig();
-                            widget.setMessage(getClientSideText().asString());
+                            widget.message = getClientSideText().asString();
                         }
                     },
-                    new TranslatableText("gui.enable_client_side.question"),
-                    new TranslatableText("gui.enable_client_side.warning"),
+                    new TranslatableText("gui.enable_client_side.question").asString(),
+                    new TranslatableText("gui.enable_client_side.warning").asString(),
                     new TranslatableText("gui.enable_client_side.enable").asString(),
-                    new TranslatableText("gui.cancel").asString()
+                    new TranslatableText("gui.cancel").asString(),
+                    "viaclientside".hashCode()
             ));
         } else {
             ViaFabric.config.setClientSideEnabled(false);
             ViaFabric.config.saveConfig();
         }
-        widget.setMessage(getClientSideText().asString());
+        ((MixinButtonWidgetAccessor) widget).setMessage(getClientSideText().asString());
     }
 
     @Override
@@ -154,10 +187,10 @@ public class ViaConfigScreen extends Screen {
         ViaFabric.config.saveConfig();
     }
 
-    @Override
-    public void onClose() {
-        MinecraftClient.getInstance().openScreen(this.parent);
-    }
+    //@Override
+    //public void onClose() {
+    //    MinecraftClient.getInstance().openScreen(this.parent);
+    //}
 
     private TranslatableText getClientSideText() {
         return ViaFabric.config.isClientSideEnabled() ?
@@ -173,14 +206,14 @@ public class ViaConfigScreen extends Screen {
     private void onHideViaButton(ButtonWidget widget) {
         ViaFabric.config.setHideButton(!ViaFabric.config.isHideButton());
         ViaFabric.config.saveConfig();
-        widget.setMessage(getHideViaButtonText().asString());
+        widget.message = getHideViaButtonText().asString();
     }
 
     public void render(int mouseX, int mouseY, float delta) {
         this.renderBackground();
-        drawCenteredString(this.font, this.title.asString(), this.width / 2, 20, 16777215);
+        drawCenteredString(this.textRenderer, this.title.asString(), this.width / 2, 20, 16777215);
         super.render(mouseX, mouseY, delta);
-        protocolVersion.render(mouseX, mouseY, delta);
+        protocolVersion.render();
     }
 
     @Override

@@ -26,6 +26,7 @@
 package com.github.creeper123123321.viafabric.mixin.client;
 
 import com.github.creeper123123321.viafabric.gui.ViaServerInfo;
+import net.minecraft.class_813;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerServerListWidget;
@@ -40,16 +41,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import us.myles.ViaVersion.api.protocol.ProtocolVersion;
 
-@Mixin(MultiplayerServerListWidget.ServerEntry.class)
+@Mixin(class_813.class)
 public class MixinServerEntry {
-    @Shadow
-    @Final
-    private ServerInfo server;
+    @Shadow @Final private ServerInfo field_3552;
 
     @Redirect(method = "render", at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/texture/TextureManager;bindTexture(Lnet/minecraft/util/Identifier;)V"))
     private void redirectPingIcon(TextureManager textureManager, Identifier id) {
-        if (id.equals(DrawableHelper.GUI_ICONS_LOCATION) && ((ViaServerInfo) server).isViaTranslating()) {
-            textureManager.bindTexture(Identifier.tryParse("viafabric:textures/gui/icons.png"));
+        if (id.equals(DrawableHelper.GUI_ICONS_TEXTURE) && ((ViaServerInfo) field_3552).isViaTranslating()) {
+            textureManager.bindTexture(new Identifier("viafabric:textures/gui/icons.png"));
             return;
         }
         textureManager.bindTexture(id);
@@ -57,7 +56,7 @@ public class MixinServerEntry {
 
     @Redirect(method = "render", at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/gui/screen/multiplayer/MultiplayerScreen;setTooltip(Ljava/lang/String;)V"))
     private void addServerVer(MultiplayerScreen multiplayerScreen, String text) {
-        ProtocolVersion proto = ProtocolVersion.getProtocol(((ViaServerInfo) server).getViaServerVer());
+        ProtocolVersion proto = ProtocolVersion.getProtocol(((ViaServerInfo) field_3552).getViaServerVer());
         multiplayerScreen.setTooltip(text + " | " + (new TranslatableText("gui.ping_version.translated", proto.getName())).getString());
     }
 }
